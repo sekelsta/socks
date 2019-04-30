@@ -26,11 +26,11 @@ POSTCOMPILE = @mv -f $(DEPDIR)/$*.Td $(DEPDIR)/$*.d && touch $@
 
 all: client server
 
-client: client.c
-	$(CXX) $(CXXFLAGS) client.c -o $@
+client: client.cc defines.hh common.hh
+	$(CXX) $(CXXFLAGS) client.cc -o $@
 
-server: server.c
-	$(CXX) $(CXXFLAGS) server.c -o $@
+server: server.cc defines.hh common.hh
+	$(CXX) $(CXXFLAGS) server.cc -o $@
 
 # To remove generated files
 clean: 

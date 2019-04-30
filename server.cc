@@ -8,10 +8,11 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <string>
+#include <stdexcept>
 
-#define MYPORT "4950"    // the port users will be connecting to
-
-#define MAXBUFLEN 100
+#include "defines.hh"
+#include "common.hh"
 
 // get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa)
@@ -26,8 +27,24 @@ void *get_in_addr(struct sockaddr *sa)
 int main(int argc, char *argv[])
 {
     if (argc > 2) {
-        fprintf(stderr,"usage: %s\nor:    %s port", argv[0]);
+        fprintf(stderr,"usage: %s\nor:    %s port", argv[0], argv[0]);
         exit(1);
+    }
+    const char *port = PORT;
+    if (argc == 2) {
+        try {
+            std::stoi(argv[1]);
+        }
+        catch (const std::invalid_argument& e) {
+            fprintf(stderr, "Could not convert port number to integer.\n");
+            exit(1);
+        }
+        catch (const std::out_of_range& e) {
+            fprintf(stderr, "Port number is too large to convert to integer.\n");
+            exit(1);
+        }
+        // Port is valid, so set it
+        port = argv[1];
     }
 
     int sockfd;
@@ -44,7 +61,7 @@ int main(int argc, char *argv[])
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_flags = AI_PASSIVE; // use my IP
 
-    if ((rv = getaddrinfo(NULL, MYPORT, &hints, &servinfo)) != 0) {
+    if ((rv = getaddrinfo(NULL, port, &hints, &servinfo)) != 0) {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
         return 1;
     }
@@ -73,7 +90,7 @@ int main(int argc, char *argv[])
 
     freeaddrinfo(servinfo);
 
-    printf("server: waiting to recvfrom...\n");
+    printf("Server ready.\n");
 
     addr_len = sizeof their_addr;
     if ((numbytes = recvfrom(sockfd, buf, MAXBUFLEN-1 , 0,
@@ -81,13 +98,17 @@ int main(int argc, char *argv[])
         perror("recvfrom");
         exit(1);
     }
+    buf[numbytes] = '\0';
+
+    if (strcmp(buf, REQUEST_NEW_CONNECTION) == 0) {
+        int bytes_sent = send_message(sockfd, p, REJECT_NEW_CONNECTION);
+    }
 
     printf("server: got packet from %s\n",
         inet_ntop(their_addr.ss_family,
             get_in_addr((struct sockaddr *)&their_addr),
             s, sizeof s));
     printf("server: packet is %d bytes long\n", numbytes);
-    buf[numbytes] = '\0';
     printf("server: packet contains \"%s\"\n", buf);
 
     close(sockfd);
