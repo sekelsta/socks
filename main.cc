@@ -27,6 +27,7 @@ std::string get_first_word(std::string s) {
 }
 
 std::string get_tail(std::string s) {
+    // TODO: deal with unexpected whitespace
     size_t n = s.find(" ");
     if (n == std::string::npos || n == s.length() - 1) {
         return "";
@@ -126,7 +127,7 @@ void write(json *j) {
     // setw for making more readable and not  really needed
     outfile << std::setw(4) << *j << std::endl;
     outfile.close();
-
+    // TODO: 
 }
 
 // Find the first document with this name.
@@ -142,8 +143,7 @@ json *find_by_name(std::string name) {
 void create(std::string name) {
     json *j = new json;
     documents.push_back(j);
-    // TODO: actually pick a reasonable id
-    (*j)["__id"] = 0;
+    // TODO: Require name to be unique
     (*j)["__name"] = name;
 
     write(j);
@@ -156,7 +156,14 @@ void edit(std::string name, std::string property, std::string value) {
         std::cerr << "Name not recognized: " << name << "\n";
     }
     else {
-        (*j)[property] = json::parse(value);
+        // TODO: error handling
+        try {
+            (*j)[property] = json::parse(value);
+        }
+        catch (nlohmann::detail::parse_error &e) {
+            std::cerr << "Could not parse:\n    " << value << "\nError:\n" 
+                      << e.what() << "\n";
+        }
         write(j);
     }
 }
