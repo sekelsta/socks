@@ -34,6 +34,16 @@ std::string get_tail(std::string s) {
     return s.substr(n + 1, s.length());
 }
 
+// Returns true if the property does not start with "__"
+bool check_property_valid(std::string property) {
+    return (property.substr(0, 2) != "__");
+}
+
+void invalid_property_message(std::string property) {
+    std::cerr << "Error: Property names beginning in \"__\" are not "
+              << "allowed:\n    " << property;
+}
+
 int main(int argc, char *argv[]) {
     std::cout << "Welcome to this db. Type QUIT to exit.\n>>> ";
     std::string line;
@@ -75,11 +85,14 @@ int main(int argc, char *argv[]) {
                 std::cerr << "Could not parse EDIT command. "
                           << "Usage:\n    EDIT name property value\n";
             }
+            else if (!check_property_valid(property)) {
+                invalid_property_message(property);
+            }
             else {
                 edit(name, property, value);
             }
         }
-        // Edit a document
+        // View a property
         else if (get_first_word(line) == "VIEW") {
             std::string remaining = get_tail(line);
             std::string name = get_first_word(remaining);
@@ -88,6 +101,9 @@ int main(int argc, char *argv[]) {
             if (property == "" || get_tail(remaining) != "") {
                 std::cerr << "Could not parse EDIT command. "
                           << "Usage:\n    EDIT name property value\n";
+            }
+            else if (!check_property_valid(property)) {
+                invalid_property_message(property);
             }
             else {
                 view(name, property);
@@ -101,6 +117,8 @@ int main(int argc, char *argv[]) {
 }
 
 void write(json *j) {
+    // If I wanted to append
+    // std::ofstream outfile((*j)["__name"], std::ios::out | std::ios::app);
     std::ofstream outfile((*j)["__name"]);
     if (!outfile) {
         std::cerr << "Can't open " << (*j)["__name"] << "\n";
@@ -121,16 +139,6 @@ json *find_by_name(std::string name) {
     return nullptr;
 }
 
-// Returns true if the property does not start with "__"
-bool check_property_valid(std::string property) {
-    return (property.substr(0, 2) != "__");
-}
-
-void invalid_property_message(std::string property) {
-    std::cerr << "Error: Property names beginning in \"__\" are not "
-              << "allowed:\n    " << property;
-}
-
 void create(std::string name) {
     json *j = new json;
     documents.push_back(j);
@@ -142,35 +150,25 @@ void create(std::string name) {
 }
 
 void edit(std::string name, std::string property, std::string value) {
-    if (check_property_valid(property)) {
-        // Find the json with that name
-        json *j = find_by_name(name);
-        if (!j) {
-            std::cerr << "Name not recognized: " << name << "\n";
-        }
-        else {
-            (*j)[property] = value;
-            write(j);
-        }
+    // Find the json with that name
+    json *j = find_by_name(name);
+    if (!j) {
+        std::cerr << "Name not recognized: " << name << "\n";
     }
     else {
-        invalid_property_message(property);
+        (*j)[property] = json::parse(value);
+        write(j);
     }
 }
 
 void view(std::string name, std::string property) {
-    if (check_property_valid(property)) {
-        // Find the json with that name
-        json *j = find_by_name(name);
-        if (!j) {
-            std::cerr << "Name not recognized: " << name << "\n";
-        }
-        else {
-            std::cout << (*j)[property] << "\n";
-        }
+    // Find the json with that name
+    json *j = find_by_name(name);
+    if (!j) {
+        std::cerr << "Name not recognized: " << name << "\n";
     }
     else {
-        invalid_property_message(property);
+        std::cout << (*j)[property] << "\n";
     }
 }
 
