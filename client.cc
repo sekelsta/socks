@@ -69,7 +69,31 @@ int main(int argc, char *argv[])
         return 2;
     }
 
-    numbytes = send_message(sockfd, p, REQUEST_NEW_CONNECTION);
+    connect(sockfd, p->ai_addr, p->ai_addrlen);
+
+    int bytes_sent = send_message(sockfd, p, REQUEST_NEW_CONNECTION);
+
+
+    struct sockaddr_storage their_addr;
+    socklen_t addr_len;
+    char s[INET6_ADDRSTRLEN];
+    addr_len = sizeof their_addr;
+    if ((numbytes = recvfrom(sockfd, buf, MAXBUFLEN-1 , 0,
+        (struct sockaddr *)&their_addr, &addr_len)) == -1) {
+        perror("recvfrom");
+        exit(1);
+    }
+    buf[numbytes] = '\0';
+
+    if (strcmp(buf, ACCEPT_NEW_CONNECTION) == 0) {
+        printf("Connection accepted\n");
+    }
+    else if (strcmp(buf, REJECT_NEW_CONNECTION) == 0) {
+        printf("Connection rejected\n");
+    }
+    else {
+        printf("Recieved unexpected reply %s\n", buf);
+    }
 
     freeaddrinfo(servinfo);
 

@@ -24,13 +24,16 @@ DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.Td
 COMPILE.cc = $(CXX) $(DEPFLAGS) $(CXXFLAGS) $(INCLUDE_FLAGS) -c
 POSTCOMPILE = @mv -f $(DEPDIR)/$*.Td $(DEPDIR)/$*.d && touch $@
 
-all: client server
+all: client server main
 
 client: client.cc defines.hh common.hh
 	$(CXX) $(CXXFLAGS) client.cc -o $@
 
 server: server.cc defines.hh common.hh
 	$(CXX) $(CXXFLAGS) server.cc -o $@
+
+main: main.cc
+	$(CXX) $(CXXFLAGS) main.cc -o $@
 
 # To remove generated files
 clean: 

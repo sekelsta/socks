@@ -14,6 +14,8 @@
 #include "defines.hh"
 #include "common.hh"
 
+#define BACKLOG 5
+
 // get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa)
 {
@@ -91,6 +93,11 @@ int main(int argc, char *argv[])
     freeaddrinfo(servinfo);
 
     printf("Server ready.\n");
+
+    if (listen(sockfd, BACKLOG) == -1) {
+        perror("listen");
+        exit(1);
+    }
 
     addr_len = sizeof their_addr;
     if ((numbytes = recvfrom(sockfd, buf, MAXBUFLEN-1 , 0,
