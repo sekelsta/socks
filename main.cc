@@ -4,48 +4,15 @@
 #include <string>
 #include <vector>
 #include "json.hpp"
+#include "utils.hh"
+#include "filereader.hh"
+
+#define HEADER_LEN 1024
 
 using json = nlohmann::json;
 
-// Global for now
-std::vector<json*> documents;
-
-void create(std::string name);
-
-void edit(std::string name, std::string property, std::string value);
-
-void view(std::string name, std::string property);
-
-void del(std::string name);
-
-std::string get_first_word(std::string s) {
-    size_t n = s.find(" ");
-    if (n == std::string::npos) {
-        return s;
-    }
-    return s.substr(0, n);
-}
-
-std::string get_tail(std::string s) {
-    // TODO: deal with unexpected whitespace
-    size_t n = s.find(" ");
-    if (n == std::string::npos || n == s.length() - 1) {
-        return "";
-    }
-    return s.substr(n + 1, s.length());
-}
-
-// Returns true if the property does not start with "__"
-bool check_property_valid(std::string property) {
-    return (property.substr(0, 2) != "__");
-}
-
-void invalid_property_message(std::string property) {
-    std::cerr << "Error: Property names beginning in \"__\" are not "
-              << "allowed:\n    " << property;
-}
-
 int main(int argc, char *argv[]) {
+    Filereader f;
     std::cout << "Welcome to this db. Type QUIT to exit.\n>>> ";
     std::string line;
     while (std::getline(std::cin, line)) {
@@ -53,11 +20,20 @@ int main(int argc, char *argv[]) {
         if (line == "QUIT") {
             break;
         }
+        else if (get_first_word(line) == "OPEN") {
+            if (is_valid_filename(get_tail(line))) {
+                f.open(get_tail(line));
+            }
+            else {
+                std::cerr << "Error: Must be a valid file name:\n    \""
+                          << get_tail(line) << "\"\n";
+            }
+        }
         // Create a document
         else if (get_first_word(line) == "CREATE") {
             if (get_tail(line) != "" 
                     && get_tail(line).find(" ") == std::string::npos) {
-                create(get_tail(line));
+                f.create(get_tail(line));
             }
             else {
                 std::cerr << "Error: Name cannot contain a space:\n    \""
@@ -68,7 +44,7 @@ int main(int argc, char *argv[]) {
         else if (get_first_word(line) == "DELETE") {
             if (get_tail(line) != "" 
                     && get_tail(line).find(" ") == std::string::npos) {
-                del(get_tail(line));
+                f.del(get_tail(line));
             }
             else {
                 std::cerr << "Error: Name cannot contain a space:\n    \""
@@ -90,7 +66,7 @@ int main(int argc, char *argv[]) {
                 invalid_property_message(property);
             }
             else {
-                edit(name, property, value);
+                f.edit(name, property, value);
             }
         }
         // View a property
@@ -107,7 +83,7 @@ int main(int argc, char *argv[]) {
                 invalid_property_message(property);
             }
             else {
-                view(name, property);
+                f.view(name, property);
             }
         }
         else {
@@ -115,70 +91,4 @@ int main(int argc, char *argv[]) {
         }
         std::cout << ">>> ";
     }
-}
-
-void write(json *j) {
-    // If I wanted to append
-    // std::ofstream outfile((*j)["__name"], std::ios::out | std::ios::app);
-    std::ofstream outfile((*j)["__name"]);
-    if (!outfile) {
-        std::cerr << "Can't open " << (*j)["__name"] << "\n";
-    }
-    // setw for making more readable and not  really needed
-    outfile << std::setw(4) << *j << std::endl;
-    outfile.close();
-    // TODO: 
-}
-
-// Find the first document with this name.
-json *find_by_name(std::string name) {
-    for (std::vector<json*>::iterator it = documents.begin(); it != documents.end(); ++it) {
-        if ((**it)["__name"] == name) {
-            return *it;
-        }
-    }
-    return nullptr;
-}
-
-void create(std::string name) {
-    json *j = new json;
-    documents.push_back(j);
-    // TODO: Require name to be unique
-    (*j)["__name"] = name;
-
-    write(j);
-}
-
-void edit(std::string name, std::string property, std::string value) {
-    // Find the json with that name
-    json *j = find_by_name(name);
-    if (!j) {
-        std::cerr << "Name not recognized: " << name << "\n";
-    }
-    else {
-        // TODO: error handling
-        try {
-            (*j)[property] = json::parse(value);
-        }
-        catch (nlohmann::detail::parse_error &e) {
-            std::cerr << "Could not parse:\n    " << value << "\nError:\n" 
-                      << e.what() << "\n";
-        }
-        write(j);
-    }
-}
-
-void view(std::string name, std::string property) {
-    // Find the json with that name
-    json *j = find_by_name(name);
-    if (!j) {
-        std::cerr << "Name not recognized: " << name << "\n";
-    }
-    else {
-        std::cout << (*j)[property] << "\n";
-    }
-}
-
-void del(std::string name) {
-    std::cerr << "DELETE not implemented.\n";
 }
