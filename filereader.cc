@@ -7,7 +7,13 @@
 
 using json = nlohmann::json;
 
+int Filereader::get_doc_start(std::string name) {
+    // TODO
+    return HEADER_LEN;
+}
+
 void Filereader::write(json *j) {
+    fseek(file, get_doc_start((*j)["__name"]), SEEK_SET);
     // If I wanted to append
     // std::ofstream outfile((*j)["__name"], std::ios::out | std::ios::app);
     // TODO: allocate space for each document like a vector
@@ -82,6 +88,9 @@ void Filereader::open(std::string name) {
             std::cerr << "Error: unable to open file:\n    " << name << "\n";
             return;
         }
+        num_docs = 0;
         fputc(0, file);
+        return;
     }
+    num_docs = (int)fgetc(file);
 }

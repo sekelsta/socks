@@ -4,6 +4,8 @@
 #include <vector>
 #include "json.hpp"
 
+#define HEADER_LEN 1024
+
 
 class Filereader {
     FILE *file;
@@ -12,6 +14,8 @@ class Filereader {
     std::vector<nlohmann::json*> documents;
 
     nlohmann::json *find_by_name(std::string name);
+
+    int get_doc_start(std::string name);
 
     public:
     void write(nlohmann::json *j);
