@@ -8,7 +8,7 @@
 
 
 class Filereader {
-    FILE *file;
+    FILE *file = NULL;
     int num_docs;
     
     std::vector<nlohmann::json*> documents;
@@ -18,6 +18,10 @@ class Filereader {
     int get_doc_start(std::string name);
 
     public:
+    inline bool is_open() {
+        return file != NULL;
+    }
+
     void write(nlohmann::json *j);
 
     void create(std::string name);

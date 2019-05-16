@@ -7,8 +7,6 @@
 #include "utils.hh"
 #include "filereader.hh"
 
-#define HEADER_LEN 1024
-
 using json = nlohmann::json;
 
 int main(int argc, char *argv[]) {
@@ -28,6 +26,11 @@ int main(int argc, char *argv[]) {
                 std::cerr << "Error: Must be a valid file name:\n    \""
                           << get_tail(line) << "\"\n";
             }
+        }
+        // Need to have an open document before doing anything else
+        else if (!f.is_open()) {
+            std::cerr << "Error: Must have an open document. Use:\n"
+                << "    OPEN filename\n";
         }
         // Create a document
         else if (get_first_word(line) == "CREATE") {
