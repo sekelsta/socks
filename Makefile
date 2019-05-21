@@ -26,7 +26,7 @@ POSTCOMPILE = @mv -f $(DEPDIR)/$*.Td $(DEPDIR)/$*.d && touch $@
 
 all: main
 
-main: main.cc utils.hh filereader.hh filereader.cc
+main: main.cc utils.hh filereader.hh filereader.cc jsoninfo.hh
 	$(CXX) $(CXXFLAGS) main.cc filereader.cc -o $@
 
 

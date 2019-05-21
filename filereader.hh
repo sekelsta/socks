@@ -3,6 +3,7 @@
 
 #include <vector>
 #include "json.hpp"
+#include "jsoninfo.hh"
 
 // The default amount of space allocated for the header
 #define HEADER_LEN 256
@@ -14,18 +15,22 @@ class Filereader {
     // 1 * HEADER_LEN
     int header_len = 1;    
 
-    std::vector<nlohmann::json*> documents;
+    std::vector<jsoninfo> documents;
 
-    nlohmann::json *find_by_name(std::string name);
+    jsoninfo *find_by_name(std::string name);
 
     int get_doc_start(std::string name);
+
+    void parse_fail();
+
+    void read_json(jsoninfo *js);
 
     public:
     inline bool is_open() {
         return file != NULL;
     }
 
-    void write(nlohmann::json *j);
+    void write(jsoninfo *js);
 
     void create(std::string name);
 
