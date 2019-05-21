@@ -4,13 +4,16 @@
 #include <vector>
 #include "json.hpp"
 
-#define HEADER_LEN 1024
+// The default amount of space allocated for the header
+#define HEADER_LEN 256
 
 
 class Filereader {
     FILE *file = NULL;
-    int num_docs;
-    
+    int num_docs = 0;
+    // 1 * HEADER_LEN
+    int header_len = 1;    
+
     std::vector<nlohmann::json*> documents;
 
     nlohmann::json *find_by_name(std::string name);

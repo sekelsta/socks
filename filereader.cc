@@ -13,17 +13,12 @@ int Filereader::get_doc_start(std::string name) {
 }
 
 void Filereader::write(json *j) {
+    std::stringstream output;
+    output << *j << std::endl;
+    int len = output.str().length();
     fseek(file, get_doc_start((*j)["__name"]), SEEK_SET);
-    // If I wanted to append
-    // std::ofstream outfile((*j)["__name"], std::ios::out | std::ios::app);
-    // TODO: allocate space for each document like a vector
-    std::ofstream outfile((*j)["__name"]);
-    if (!outfile) {
-        std::cerr << "Can't open " << (*j)["__name"] << "\n";
-    }
-    // setw for making more readable and not  really needed
-    outfile << std::setw(4) << *j << std::endl;
-    outfile.close();
+    fwrite(&len, sizeof(int), 1, file);
+    fputs(output.str().c_str(), file);
 }
 
 // Find the first document with this name.
@@ -89,8 +84,10 @@ void Filereader::open(std::string name) {
             return;
         }
         num_docs = 0;
-        fputc(0, file);
+        fputc(header_len, file); // 1 (x HEADER_LEN)
+        fputc(num_docs, file); // 0
         return;
     }
+    header_len = (int)fgetc(file);
     num_docs = (int)fgetc(file);
 }
