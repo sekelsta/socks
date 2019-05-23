@@ -7,6 +7,7 @@
 
 // The default amount of space allocated for the header
 #define HEADER_LEN 256
+#define INVALID_LOCATION -1
 
 
 class Filereader {
@@ -19,9 +20,13 @@ class Filereader {
 
     jsoninfo *find_by_name(std::string name);
 
+    void set_num_docs(int num);
+
     int get_doc_start(std::string name);
 
     void parse_fail();
+
+    void extend(jsoninfo *js, int size_needed);
 
     void read_json(jsoninfo *js);
 
@@ -30,7 +35,7 @@ class Filereader {
         return file != NULL;
     }
 
-    void write(jsoninfo *js);
+    void write(jsoninfo *js, int allocated_size);
 
     void create(std::string name);
 
