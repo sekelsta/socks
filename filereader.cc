@@ -4,6 +4,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <cmath>
 
 using json = nlohmann::json;
 
@@ -31,9 +32,17 @@ void Filereader::parse_fail() {
     header_len = 1;
 }
 
+void Filereader::extend_header(int size_needed) {
+    // TODO
+}
+
 void Filereader::extend(jsoninfo *js, int size_needed) {
     //fseek(file, js -> header_start, SEEK_SET);
     //TODO
+    // Choose a new size
+    // Update the header
+    // Move anything after it
+    // Update their headers, and the in-memory values
 }
 
 void Filereader::read_json(jsoninfo *js) {
@@ -58,11 +67,11 @@ void Filereader::read_json(jsoninfo *js) {
     *(js -> j) = json::parse(s);
 }
 
-void Filereader::write(jsoninfo *js, int allocated_size) {
+void Filereader::write(jsoninfo *js) {
     std::stringstream output;
     output << *(js -> j) << std::endl;
     int len = output.str().length();
-    if (len + sizeof(int) >= allocated_size) {
+    if (len + sizeof(int) >= js -> allocated_size) {
         extend(js, len);
     }
     fseek(file, get_doc_start((*(js -> j))["__name"]), SEEK_SET);
@@ -88,13 +97,39 @@ void Filereader::create(std::string name) {
         return;
     }
     // Add header
-    // TODO
+    int header_size = 2 * sizeof(int) + name.length();
+    // Default initial size
+    int header_end = header_size;
+    if (num_docs > 0) {
+        // Find the end of the last header
+        int header_end = documents.back().header_start + sizeof(int) 
+            + sizeof(char) + documents.back().name.length();
+        fseek(file, header_end, SEEK_SET);
+        
+        // check size
+        if (header_size + header_end >= header_len * HEADER_LEN) {
+            extend_header(header_size + header_end);
+            create(name);
+            return;
+        }
+    }
+    // write new header
+    fseek(file, header_end, SEEK_SET);
+    // Get position of header start
+    long int header_pos = ftell(file);
+    // Write int for file position
+    fwrite(&end, sizeof(int), 1, file);
+    // Write char for name length
+    fputc((char)name.length(), file); // 1 (x HEADER_LEN)
+    // Write name
+    fputs(name.c_str(), file);
     // Add document to list
     json *j = new json;
-    documents.push_back({j, INVALID_LOCATION, name});
+    documents.push_back({j, end, header_pos, BLOCK_SIZE, name});
     (*j)["__name"] = name;
     // Write
     set_num_docs(num_docs + 1);
+    end += BLOCK_SIZE;
     write(&documents.back());
 }
 
@@ -146,13 +181,15 @@ void Filereader::open(std::string name) {
         return;
     }
     // If adding or removing anything to the format here, change set_num_docs() 
-    // as well
+    // and create() as well
     header_len = (int)fgetc(file);
     if (fread(&num_docs, sizeof(int), 1, file) != 1) {
         parse_fail();
     }
     // Read headers
     for (int i = 0; i < num_docs; ++i) {
+        // Get position of header start
+        long int header_pos = ftell(file);
         // Read int for file position
         int pos;
         if (fread(&pos, sizeof(int), 1, file) != 1) {
@@ -165,11 +202,21 @@ void Filereader::open(std::string name) {
         if (fgets(name, name_len, file) == NULL) {
             parse_fail();
         }
-        documents.push_back({nullptr, pos, std::string(name)});
+        documents.push_back({nullptr, pos, header_pos, 0, std::string(name)});
         free(name);
     }
+    // Set allocated size properly
+    for (int i = 0; i < num_docs - 1; ++i) {
+        documents[i].allocated_size = documents[i+1].doc_start - documents[i].doc_start;
+    }
+    // TODO: don't read until needed
     // Read jsons
     for (int i = 0; i < num_docs; ++i) {
         read_json(&(documents[i]));
+    }
+    if (num_docs > 0) {
+        int last_len = documents.back().j->dump().length();
+        // Round up to a multiple of BLOCK_SIZE
+        documents.back().allocated_size = BLOCK_SIZE * ceil(last_len/BLOCK_SIZE);
     }
 }

@@ -8,13 +8,17 @@
 // The default amount of space allocated for the header
 #define HEADER_LEN 256
 #define INVALID_LOCATION -1
+#define BLOCK_SIZE 256
 
 
 class Filereader {
     FILE *file = NULL;
     int num_docs = 0;
     // 1 * HEADER_LEN
-    int header_len = 1;    
+    int header_len = 1;   
+
+    // Position the next document aded should start at
+    int end;
 
     std::vector<jsoninfo> documents;
 
@@ -28,6 +32,8 @@ class Filereader {
 
     void extend(jsoninfo *js, int size_needed);
 
+    void extend_header(int size_needed);
+
     void read_json(jsoninfo *js);
 
     public:
@@ -35,7 +41,7 @@ class Filereader {
         return file != NULL;
     }
 
-    void write(jsoninfo *js, int allocated_size);
+    void write(jsoninfo *js);
 
     void create(std::string name);
 
