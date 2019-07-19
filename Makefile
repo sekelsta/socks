@@ -2,37 +2,30 @@ CXX = g++
 # For debugging use -Og -g
 # For going fast use -O3
 CXXFLAGS = -std=c++14 -Wall -D_GLIBCXX_DEBUG -D_LIBCXX_DEBUG_PEDANTIC -Og -g
-#CXXFLAGS = -std=c++14 -Wall -O3
-INCLUDE_FLAGS = -I/usr/include/libnoise -L/usr/lib 
-LINKER_FLAGS = -lSDL2 -lSDL2_image -lSDL2_ttf -lnoise -lpthread
 
-# what folders
-SRCDIR = src/
-OBJDIR = obj/
-BINDIR = ./
-
-# File names
-SOURCEFILES := $(notdir $(wildcard $(SRCDIR)*.cc))
-SOURCES = $(addprefix $(SRCDIR), $(SOURCEFILES))
-OBJECTS = $(addprefix $(OBJDIR), $(SOURCEFILES:.cc=.o))
-EXEC = burrowbun
-
-DEPDIR := .d
-$(shell mkdir -p $(DEPDIR) >/dev/null)
-DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.Td
-
-COMPILE.cc = $(CXX) $(DEPFLAGS) $(CXXFLAGS) $(INCLUDE_FLAGS) -c
-POSTCOMPILE = @mv -f $(DEPDIR)/$*.Td $(DEPDIR)/$*.d && touch $@
+# Keep track of dependencies
+utils.hh.d = utils.hh
+filereader.hh.d = filereader.hh $(fileheader.hh.d) $(jsoninfo.hh.d)
+fileheader.hh.d = fileheader.hh
+jsoninfo.hh.d = jsoninfo.hh json.hpp
 
 all: main
 
-main: main.cc utils.hh filereader.hh filereader.cc jsoninfo.hh
-	$(CXX) $(CXXFLAGS) main.cc filereader.cc -o $@
+main: main.cc utils.hh filereader.hh filereader.cc jsoninfo.hh fileheader.hh fileheader.cc
+	$(CXX) $(CXXFLAGS) main.cc filereader.cc fileheader.cc -o $@
 
+main.o: main.cc $(utils.hh.d) $(filereader.hh.d) json.hpp
+	$(CC) $(CXXFLAGS) $^ -c $(LDFLAGS)
+
+fileheader.o: fileheader.cc $(fileheader.hh.d)
+	$(CC) $(CXXFLAGS) $^ -c $(LDFLAGS)
+
+filereader.o: filereader.cc $(filereader.hh.d)
+	$(CC) $(CXXFLAGS) $^ -c $(LDFLAGS)
 
 # To remove generated files
 clean: 
-	rm -f *.o *.gch client server
+	rm -f *.o *.gch main
 
 $(DEPDIR)/%.d: ;
 .PRECIOUS: $(DEPDIR)/%.d

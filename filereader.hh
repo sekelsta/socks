@@ -2,20 +2,17 @@
 #define FILEREADER_HH
 
 #include <vector>
-#include "json.hpp"
+#include <cstdio>
 #include "jsoninfo.hh"
+#include "fileheader.hh"
 
-// The default amount of space allocated for the header
-#define HEADER_LEN 256
 #define INVALID_LOCATION -1
 #define BLOCK_SIZE 256
 
 
 class Filereader {
     FILE *file = NULL;
-    int num_docs = 0;
-    // 1 * HEADER_LEN
-    int header_len = 1;   
+    Fileheader header; 
 
     // Position the next document aded should start at
     int end;

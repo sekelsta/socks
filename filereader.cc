@@ -8,14 +8,6 @@
 
 using json = nlohmann::json;
 
-
-void Filereader::set_num_docs(int num) {
-    num_docs = num;
-    // First char is header len, next int is num_docs
-    fseek(file, 1, SEEK_SET);
-    fwrite(&num_docs, sizeof(int), 1, file);
-}
-
 int Filereader::get_doc_start(std::string name) {
     int start = find_by_name(name) -> doc_start;
     if (start == INVALID_LOCATION) {
@@ -28,8 +20,8 @@ void Filereader::parse_fail() {
     std::cerr << "Could not parse file.\n";
     fclose(file);
     file = NULL;
-    num_docs = 0;
-    header_len = 1;
+    header.num_docs = 0;
+    header.header_len = DEFAULT_HEADER_LEN;
 }
 
 void Filereader::extend_header(int size_needed) {
@@ -100,14 +92,14 @@ void Filereader::create(std::string name) {
     int header_size = 2 * sizeof(int) + name.length();
     // Default initial size
     int header_end = header_size;
-    if (num_docs > 0) {
+    if (header.num_docs > 0) {
         // Find the end of the last header
         int header_end = documents.back().header_start + sizeof(int) 
             + sizeof(char) + documents.back().name.length();
         fseek(file, header_end, SEEK_SET);
         
         // check size
-        if (header_size + header_end >= header_len * HEADER_LEN) {
+        if (header_size + header_end >= header.header_len) {
             extend_header(header_size + header_end);
             create(name);
             return;
@@ -128,7 +120,7 @@ void Filereader::create(std::string name) {
     documents.push_back({j, end, header_pos, BLOCK_SIZE, name});
     (*j)["__name"] = name;
     // Write
-    set_num_docs(num_docs + 1);
+    header.set_num_docs(header.num_docs + 1, file);
     end += BLOCK_SIZE;
     write(&documents.back());
 }
@@ -176,18 +168,11 @@ void Filereader::open(std::string name) {
             std::cerr << "Error: unable to open file:\n    " << name << "\n";
             return;
         }
-        fputc(header_len, file); // 1 (x HEADER_LEN)
-        set_num_docs(0);
+        header.write_header(file);
         return;
     }
-    // If adding or removing anything to the format here, change set_num_docs() 
-    // and create() as well
-    header_len = (int)fgetc(file);
-    if (fread(&num_docs, sizeof(int), 1, file) != 1) {
-        parse_fail();
-    }
     // Read headers
-    for (int i = 0; i < num_docs; ++i) {
+    for (int i = 0; i < header.num_docs; ++i) {
         // Get position of header start
         long int header_pos = ftell(file);
         // Read int for file position
@@ -206,15 +191,15 @@ void Filereader::open(std::string name) {
         free(name);
     }
     // Set allocated size properly
-    for (int i = 0; i < num_docs - 1; ++i) {
+    for (int i = 0; i < header.num_docs - 1; ++i) {
         documents[i].allocated_size = documents[i+1].doc_start - documents[i].doc_start;
     }
     // TODO: don't read until needed
     // Read jsons
-    for (int i = 0; i < num_docs; ++i) {
+    for (int i = 0; i < header.num_docs; ++i) {
         read_json(&(documents[i]));
     }
-    if (num_docs > 0) {
+    if (header.num_docs > 0) {
         int last_len = documents.back().j->dump().length();
         // Round up to a multiple of BLOCK_SIZE
         documents.back().allocated_size = BLOCK_SIZE * ceil(last_len/BLOCK_SIZE);
