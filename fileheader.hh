@@ -5,6 +5,8 @@
 
 // The default amount of space allocated for the header
 #define DEFAULT_HEADER_LEN 256
+// Where the header info from here ends and the table of documents begins
+#define DOC_TABLE_START 2 * sizeof(int32_t)
 
 struct Fileheader {
     // The number of documents within the file

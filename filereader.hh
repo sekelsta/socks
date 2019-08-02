@@ -5,23 +5,16 @@
 #include <cstdio>
 #include "jsoninfo.hh"
 #include "fileheader.hh"
-
-#define INVALID_LOCATION -1
-#define BLOCK_SIZE 256
+#include "doc_table.hh"
 
 
 class Filereader {
     FILE *file = NULL;
     Fileheader header; 
+    DocTable table;
 
-    // Position the next document aded should start at
+    // Position the next document added should start at
     int end;
-
-    std::vector<jsoninfo> documents;
-
-    jsoninfo *find_by_name(std::string name);
-
-    void set_num_docs(int num);
 
     int get_doc_start(std::string name);
 
@@ -30,8 +23,6 @@ class Filereader {
     void extend(jsoninfo *js, int size_needed);
 
     void extend_header(int size_needed);
-
-    void read_json(jsoninfo *js);
 
     public:
     inline bool is_open() {

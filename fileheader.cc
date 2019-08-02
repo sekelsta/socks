@@ -23,8 +23,12 @@ void Fileheader::set_num_docs(int num, FILE *file) {
 }
 
 
-// Set fields based on the file. Return -1 on error.
+// Set fields based on the file.
 void Fileheader::read_header(FILE *file) {
+    // Go to the beginning of the file
+    if (fseek(file, 0, SEEK_SET) != 0) {
+        throw "TODO: deal with file errors";
+    }
     if (fread(&num_docs, sizeof(int), 1, file) != 1) {
         throw "TODO: deal with file errors";
     }

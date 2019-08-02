@@ -8,11 +8,12 @@ utils.hh.d = utils.hh
 filereader.hh.d = filereader.hh $(fileheader.hh.d) $(jsoninfo.hh.d)
 fileheader.hh.d = fileheader.hh
 jsoninfo.hh.d = jsoninfo.hh json.hpp
+doc_table.hh.d = doc_table.hh jsoninfo.hh $(fileheader.hh.d)
 
 all: main
 
-main: main.cc utils.hh filereader.hh filereader.cc jsoninfo.hh fileheader.hh fileheader.cc
-	$(CXX) $(CXXFLAGS) main.cc filereader.cc fileheader.cc -o $@
+main: main.cc utils.hh $(filereader.hh.d) filereader.cc $(jsoninfo.hh.d) $(fileheader.hh.d) fileheader.cc $(doc_table.hh.d) doc_table.cc
+	$(CXX) $(CXXFLAGS) main.cc filereader.cc fileheader.cc doc_table.cc -o $@
 
 main.o: main.cc $(utils.hh.d) $(filereader.hh.d) json.hpp
 	$(CC) $(CXXFLAGS) $^ -c $(LDFLAGS)
@@ -22,6 +23,9 @@ fileheader.o: fileheader.cc $(fileheader.hh.d)
 
 filereader.o: filereader.cc $(filereader.hh.d)
 	$(CC) $(CXXFLAGS) $^ -c $(LDFLAGS)
+
+test_header: test_header.cc $(fileheader.hh.d) $(doc_table.hh.d) fileheader.cc doc_table.cc
+	$(CXX) $(CXXFLAGS) test_header.cc fileheader.cc doc_table.cc -o $@
 
 # To remove generated files
 clean: 

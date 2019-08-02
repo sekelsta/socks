@@ -4,6 +4,9 @@
 #include <string>
 #include "json.hpp"
 
+#define INVALID_LOCATION -1
+#define BLOCK_SIZE 256
+
 struct jsoninfo {
     nlohmann::json* j;
     int doc_start;
