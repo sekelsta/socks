@@ -109,5 +109,6 @@ void Filereader::open(std::string name) {
         return;
     }
     // Read headers
+    header.read_header(file);
     table.read(header.num_docs, file);
 }

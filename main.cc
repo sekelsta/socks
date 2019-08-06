@@ -79,8 +79,8 @@ int main(int argc, char *argv[]) {
             remaining = get_tail(remaining);
             std::string property = get_first_word(remaining);
             if (property == "" || get_tail(remaining) != "") {
-                std::cerr << "Could not parse EDIT command. "
-                          << "Usage:\n    EDIT name property value\n";
+                std::cerr << "Could not parse VIEW command. "
+                          << "Usage:\n    VIEW name property\n";
             }
             else if (!check_property_valid(property)) {
                 invalid_property_message(property);
