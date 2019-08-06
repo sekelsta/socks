@@ -78,9 +78,12 @@ int main(int argc, char *argv[]) {
             std::string name = get_first_word(remaining);
             remaining = get_tail(remaining);
             std::string property = get_first_word(remaining);
-            if (property == "" || get_tail(remaining) != "") {
+            if (get_tail(remaining) != "") {
                 std::cerr << "Could not parse VIEW command. "
-                          << "Usage:\n    VIEW name property\n";
+                          << "Usage:\n    VIEW name [property]\n";
+            }
+            else if (property == "") {
+                f.view_properties(name);
             }
             else if (!check_property_valid(property)) {
                 invalid_property_message(property);

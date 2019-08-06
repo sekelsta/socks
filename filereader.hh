@@ -24,7 +24,7 @@ class Filereader {
 
     void extend_header(int size_needed);
 
-    public:
+public:
     inline bool is_open() {
         return file != NULL;
     }
@@ -33,9 +33,17 @@ class Filereader {
 
     void create(std::string name);
 
+private:
+    bool is_property_hidden(std::string property);
+
+    jsoninfo *get_json(std::string name);
+
+public:
     void edit(std::string name, std::string property, std::string value);
 
     void view(std::string name, std::string property);
+
+    void view_properties(std::string name);
 
     void del(std::string name);
 

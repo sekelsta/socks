@@ -62,11 +62,25 @@ void Filereader::create(std::string name) {
     write(&js);
 }
 
+bool Filereader::is_property_hidden(std::string property) {
+    return property.length() >= 2 
+            && property[0] == '_' && property[1] == '_';
+}
+
 void Filereader::edit(std::string name, std::string property, std::string value) {
+    // Check if the document exists
+    if (!table.is_name_used(name, file)) {
+        std::cerr << "Error: Name not recognized: " << name << "\n";
+        return;
+    }
     // Find the json with that name
     jsoninfo *js = table.find_by_name(name, file);
     if (!js) {
         std::cerr << "Name not recognized: " << name << "\n";
+    }
+    else if (is_property_hidden(property)) {
+        std::cerr << "Cannot edit internal (hidden) property \"" 
+                  << property << "\".\n";
     }
     else {
         try {
@@ -81,13 +95,39 @@ void Filereader::edit(std::string name, std::string property, std::string value)
 }
 
 void Filereader::view(std::string name, std::string property) {
+    // Check if the document exists
+    if (!table.is_name_used(name, file)) {
+        std::cerr << "Error: Name not recognized: " << name << "\n";
+        return;
+    }
     // Find the json with that name
     json *j = table.get_json(name, file);
-    if (!j) {
-        std::cerr << "Error: Name not recognized: " << name << "\n";
+    assert(j != nullptr);
+    if (!(*j).count(property)) {
+        std::cerr << "Error: \"" << name << "\" does not have \"" 
+                  << property << "\".\n";
     }
     else {
+        if (is_property_hidden(property)) {
+            std::cout << "Viewing hidden property \"" << property << "\"\n";
+        }
         std::cout << (*j)[property] << "\n";
+    }
+}
+
+void Filereader::view_properties(std::string name) {
+    // Check if the document exists
+    if (!table.is_name_used(name, file)) {
+        std::cerr << "Error: Name not recognized: " << name << "\n";
+        return;
+    }
+    // Find the json with that name
+    json *j = table.get_json(name, file);
+    assert(j != nullptr);
+    for (json::iterator it = (*j).begin(); it != (*j).end(); ++it) {
+        if (!is_property_hidden(it.key())) {
+            std::cout << it.key() << ": " << it.value() << "\n";
+        }
     }
 }
 
