@@ -146,7 +146,7 @@ void Filereader::open(std::string name) {
     file = fopen(name.c_str(), "r+");
     if (file == NULL) {
         // Create file if needed
-        file = fopen(name.c_str(), "w");
+        file = fopen(name.c_str(), "w+");
         if (file == NULL) {
             std::cerr << "Error: unable to open file:\n    " << name << "\n";
             return;

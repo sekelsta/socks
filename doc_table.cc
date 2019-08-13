@@ -40,7 +40,6 @@ void DocTable::write(jsoninfo &doc, FILE *file) {
         throw "TODO: deal with file errors";
     }
     // Write name length
-    std::cout << "Writing name length to: " << ftell(file) << "\n";
     if (fputc((char)doc.name.length(), file) == EOF) {
         throw "TODO: deal with file errors";
     }
@@ -138,7 +137,6 @@ void DocTable::read(int num_docs, FILE *file) {
             throw "TODO: deal with file errors";
         }
         // Read char for name length
-        std::cout << "Reading name length at: " << ftell(file) << "\n";
         int name_len = fgetc(file);
         if (name_len == EOF) {
             throw "TODO: deal with file errors";
@@ -198,7 +196,9 @@ int DocTable::get_file_end() {
 void DocTable::shift(int start, int new_start, FILE *file) {
     for(unsigned int i = 0; i < documents.size(); ++i) {
         if (documents[i].doc_start >= start) {
-            documents[i].doc_start += (new_start - start);
+            jsoninfo change = documents[i];
+            change.doc_start += new_start - start;
+            modify(documents[i].name, change, file);
         }
     }
 }
