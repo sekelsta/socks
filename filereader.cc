@@ -1,4 +1,5 @@
 #include "filereader.hh"
+#include "file_utils.hh"
 #include <iomanip>
 #include <iostream>
 #include <fstream>
@@ -16,8 +17,12 @@ void Filereader::parse_fail() {
     header.header_len = DEFAULT_HEADER_LEN;
 }
 
-void Filereader::extend_header(int size_needed) {
-    // TODO
+void Filereader::extend_header() {
+    if (header.num_docs > 0) {
+        file_shift(header.header_len, 2 * header.header_len, file);
+        table.shift(header.header_len, 2 * header.header_len, file);
+    }
+    header.set_header_len(2 * header.header_len, file);
 }
 
 void Filereader::extend(jsoninfo *js, int size_needed) {
@@ -50,8 +55,9 @@ void Filereader::create(std::string name) {
     // Gather document info
     json *j = new json;
     jsoninfo js = {j, INVALID_LOCATION, INVALID_LOCATION, BLOCK_SIZE, name};
-    if (table.add(js, header.header_len, file)) {
-        std::cerr << "TODO: extend header\n";
+    // If needed, double the header length until the new entry fits
+    while (table.add(js, header.header_len, file)) {
+        extend_header();
     }
     js.doc_start = table.get_file_end();
     table.modify(name, js, file);
@@ -62,9 +68,9 @@ void Filereader::create(std::string name) {
     write(&js);
 }
 
+// Returns true if the property does not start with "__"
 bool Filereader::is_property_hidden(std::string property) {
-    return property.length() >= 2 
-            && property[0] == '_' && property[1] == '_';
+    return (property.substr(0, 2) == "__");
 }
 
 void Filereader::edit(std::string name, std::string property, std::string value) {
@@ -109,7 +115,7 @@ void Filereader::view(std::string name, std::string property) {
     }
     else {
         if (is_property_hidden(property)) {
-            std::cout << "Viewing hidden property \"" << property << "\"\n";
+            std::cout << "Viewing hidden property \"" << property << "\":\n";
         }
         std::cout << (*j)[property] << "\n";
     }

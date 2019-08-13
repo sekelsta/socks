@@ -9,6 +9,7 @@ filereader.hh.d = filereader.hh $(fileheader.hh.d) $(jsoninfo.hh.d)
 fileheader.hh.d = fileheader.hh
 jsoninfo.hh.d = jsoninfo.hh json.hpp
 doc_table.hh.d = doc_table.hh jsoninfo.hh $(fileheader.hh.d)
+file_utils.hh.d = file_utils.hh
 
 all: main
 
@@ -21,7 +22,7 @@ main.o: main.cc $(utils.hh.d) $(filereader.hh.d) json.hpp
 fileheader.o: fileheader.cc $(fileheader.hh.d)
 	$(CC) $(CXXFLAGS) $^ -c $(LDFLAGS)
 
-filereader.o: filereader.cc $(filereader.hh.d)
+filereader.o: filereader.cc $(filereader.hh.d) $(file_utils.hh.d)
 	$(CC) $(CXXFLAGS) $^ -c $(LDFLAGS)
 
 test_header: test_header.cc $(fileheader.hh.d) $(doc_table.hh.d) fileheader.cc doc_table.cc

@@ -194,3 +194,11 @@ int DocTable::get_file_end() {
     }
     return documents.back().doc_start + documents.back().allocated_size;
 }
+
+void DocTable::shift(int start, int new_start, FILE *file) {
+    for(unsigned int i = 0; i < documents.size(); ++i) {
+        if (documents[i].doc_start >= start) {
+            documents[i].doc_start += (new_start - start);
+        }
+    }
+}

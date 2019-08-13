@@ -65,9 +65,6 @@ int main(int argc, char *argv[]) {
                 std::cerr << "Could not parse EDIT command. "
                           << "Usage:\n    EDIT name property value\n";
             }
-            else if (!check_property_valid(property)) {
-                invalid_property_message(property);
-            }
             else {
                 f.edit(name, property, value);
             }
@@ -84,9 +81,6 @@ int main(int argc, char *argv[]) {
             }
             else if (property == "") {
                 f.view_properties(name);
-            }
-            else if (!check_property_valid(property)) {
-                invalid_property_message(property);
             }
             else {
                 f.view(name, property);

@@ -22,7 +22,7 @@ class Filereader {
 
     void extend(jsoninfo *js, int size_needed);
 
-    void extend_header(int size_needed);
+    void extend_header();
 
 public:
     inline bool is_open() {
