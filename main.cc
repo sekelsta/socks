@@ -86,6 +86,16 @@ int main(int argc, char *argv[]) {
                 f.view(name, property);
             }
         }
+        else if (get_first_word(line) == "LIST") {
+            std::string remaining = get_tail(line);
+            if (get_tail(remaining) != "") {
+                std::cerr << "Extra arguments to LIST command. "
+                          << "Usage:\n    LIST\n";
+            }
+            else {
+                f.list();
+            }
+        }
         else {
             std::cerr << "Command not recognized.\n";
         }

@@ -48,6 +48,8 @@ public:
     void del(std::string name);
 
     void open(std::string name);
+
+    void list();
 };
 
 #endif

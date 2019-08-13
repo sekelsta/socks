@@ -158,3 +158,7 @@ void Filereader::open(std::string name) {
     header.read_header(file);
     table.read(header.num_docs, file);
 }
+
+void Filereader::list() {
+    table.list(file);
+}

@@ -31,6 +31,7 @@ public:
     nlohmann::json *get_json(std::string name, FILE *file);
     int get_file_end();
     void shift(int start, int new_start, FILE *file);
+    void list(FILE *file);
 };
 
 #endif

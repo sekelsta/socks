@@ -202,3 +202,10 @@ void DocTable::shift(int start, int new_start, FILE *file) {
         }
     }
 }
+
+
+void DocTable::list(FILE *file) {
+    for(unsigned int i = 0; i < documents.size(); ++i) {
+        std::cout << documents[i].name << "\n";
+    }
+}
