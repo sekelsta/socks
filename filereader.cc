@@ -52,14 +52,20 @@ void Filereader::create(std::string name) {
         std::cerr << "Error: A document with that name already exists.\n";
         return;
     }
+    // Name length is stored as a char
+    if (name.size() > 255) {
+        std::cerr << "Error: Names can be at most 255 characters long.\n"
+                  << "\"" << name << "\" is " << name.size()
+                  << " characters long.\n";
+        return;
+    }
     // Gather document info
     json *j = new json;
-    jsoninfo js = {j, INVALID_LOCATION, INVALID_LOCATION, BLOCK_SIZE, name};
+    jsoninfo js = {j, table.get_file_end(), INVALID_LOCATION, BLOCK_SIZE, name};
     // If needed, double the header length until the new entry fits
     while (table.add(js, header.header_len, file)) {
         extend_header();
     }
-    js.doc_start = table.get_file_end();
     table.modify(name, js, file);
     // TODO: move this into jsoninfo constructor
     (*j)["__name"] = name;
