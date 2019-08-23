@@ -26,12 +26,19 @@ void Filereader::extend_header() {
 }
 
 void Filereader::extend(jsoninfo *js, int size_needed) {
-    //fseek(file, js -> header_start, SEEK_SET);
-    //TODO
-    // Choose a new size
-    // Update the header
-    // Move anything after it
-    // Update their headers, and the in-memory values
+    int new_size = js->allocated_size;
+    while (new_size <= size_needed) {
+        new_size *= 2;
+    }
+    if (js->name != table.documents.back().name) {
+        int start = js->doc_start + js->allocated_size;
+        int new_start = js->doc_start + new_size;
+        file_shift(start, new_start, file);
+        table.shift(start, new_start, file);
+    }
+    jsoninfo modified = *js;
+    modified.allocated_size = new_size;
+    table.modify(modified.name, modified, file);
 }
 
 void Filereader::write(jsoninfo *js) {

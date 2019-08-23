@@ -9,7 +9,10 @@
 
 // For doing low level file IO things
 class DocTable {
+private:    
+public: // TODO: make private
     std::vector<jsoninfo> documents;
+private:
     long end = DOC_TABLE_START;
 
 private:    
