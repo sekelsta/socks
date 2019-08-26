@@ -1,4 +1,5 @@
 #include "doc_table.hh"
+#include "file_utils.hh"
 
 using json = nlohmann::json;
 
@@ -24,7 +25,7 @@ int DocTable::add(jsoninfo &doc, int header_len, FILE *file) {
     write(doc, file);
     end = ftell(file);
     if (end == -1L) {
-        throw "TODO: deal with file errors";
+        perror(FILE_IO_ERROR);
     }
     documents.push_back(doc);
     return 0;
@@ -33,19 +34,19 @@ int DocTable::add(jsoninfo &doc, int header_len, FILE *file) {
 void DocTable::write(jsoninfo &doc, FILE *file) {
     // Seek
     if (fseek(file, doc.header_start, SEEK_SET) != 0) {
-        throw "TODO: deal with file errors";
+        perror(FILE_IO_ERROR);
     }
     // Write document's location
     if (fwrite(&(doc.doc_start), sizeof(int), 1, file) != 1) {
-        throw "TODO: deal with file errors";
+        perror(FILE_IO_ERROR);
     }
     // Write name length
     if (fputc((char)doc.name.length(), file) == EOF) {
-        throw "TODO: deal with file errors";
+        perror(FILE_IO_ERROR);
     }
     // Write name
     if (fputs(doc.name.c_str(), file) == EOF) {
-        throw "TODO: deal with file errors";
+        perror(FILE_IO_ERROR);
     }
 }
 
@@ -56,7 +57,7 @@ void DocTable::remove(std::string name, FILE *file) {
     }
     // Seek
     if (fseek(file, DOC_TABLE_START, SEEK_SET) != 0) {
-        throw "TODO: deal with file errors";
+        perror(FILE_IO_ERROR);
     }
 
     // TODO
@@ -70,7 +71,7 @@ void DocTable::modify(std::string name, jsoninfo doc, FILE *file) {
     }
     // Seek
     if (fseek(file, DOC_TABLE_START, SEEK_SET) != 0) {
-        throw "TODO: deal with file errors";
+        perror(FILE_IO_ERROR);
     }
     
     // TODO
@@ -105,12 +106,12 @@ void DocTable::read_json(jsoninfo *js, FILE *file) {
     // Read the size of the json file
     int len;
     if (fread(&len, sizeof(int), 1, file) != 1) {
-        throw "TODO: deal with file errors";
+        perror(FILE_IO_ERROR);
     }
     // Read the file
     char *jdata = (char *)malloc(len);
     if (fgets(jdata, len, file) == NULL) {
-        throw "TODO: deal with file errors";
+        perror(FILE_IO_ERROR);
     }
     // Convert to string to json
     std::string s(jdata);
@@ -122,24 +123,24 @@ void DocTable::read_json(jsoninfo *js, FILE *file) {
 void DocTable::read(int num_docs, FILE *file) {
     // Seek
     if (fseek(file, DOC_TABLE_START, SEEK_SET) != 0) {
-        throw "TODO: deal with file errors";
+        perror(FILE_IO_ERROR);
     }
     // Read
     for (int i = 0; i < num_docs; ++i) {
         // Get position of header start
         long int header_pos = ftell(file);
         if (header_pos == -1) {
-            throw "TODO: deal with file errors";
+            perror(FILE_IO_ERROR);
         }
         // Read int for file position
         int pos;
         if (fread(&pos, sizeof(int32_t), 1, file) != 1) {
-            throw "TODO: deal with file errors";
+            perror(FILE_IO_ERROR);
         }
         // Read char for name length
         int name_len = fgetc(file);
         if (name_len == EOF) {
-            throw "TODO: deal with file errors";
+            perror(FILE_IO_ERROR);
         }
         else if (name_len == 0) {
             throw "Error: invalid format (names cannot be length 0)";
@@ -148,22 +149,21 @@ void DocTable::read(int num_docs, FILE *file) {
         char *name = (char *)malloc(name_len + 1);
         if (fgets(name, name_len + 1, file) == NULL) {
             if (feof(file) != 0) {
-                throw "TODO: deal with file errors (encountered unexpected EOF)";
+                std::cerr << UNEXPECTED_EOF_ERROR;
             }
             else {
-                std::cerr << "ferror code: " << ferror(file) << "\n";
-                throw "TODO: deal with file errors";
+                perror(FILE_IO_ERROR);
             }
         }
         if (feof(file) != 0) {
-            throw "TODO: deal with file errors (encountered unexpected EOF)";
+            std::cerr << UNEXPECTED_EOF_ERROR;
         }
         documents.push_back({nullptr, pos, header_pos, 0, std::string(name)});
         free(name);
     }
     end = ftell(file);
     if (end == -1) {
-            throw "TODO: deal with file errors";
+            perror(FILE_IO_ERROR);
     }
 
     // Set allocated size properly

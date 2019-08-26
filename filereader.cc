@@ -9,14 +9,6 @@
 
 using json = nlohmann::json;
 
-void Filereader::parse_fail() {
-    std::cerr << "Error: Could not parse file.\n";
-    fclose(file);
-    file = NULL;
-    header.num_docs = 0;
-    header.header_len = DEFAULT_HEADER_LEN;
-}
-
 void Filereader::extend_header() {
     if (header.num_docs > 0) {
         file_shift(header.header_len, 2 * header.header_len, file);
@@ -48,9 +40,16 @@ void Filereader::write(jsoninfo *js) {
     if (len + sizeof(int) >= js -> allocated_size) {
         extend(js, len);
     }
-    fseek(file, table.get_doc_start((*(js -> j))["__name"], file), SEEK_SET);
-    fwrite(&len, sizeof(int), 1, file);
-    fputs(output.str().c_str(), file);
+    int location = table.get_doc_start((*(js -> j))["__name"], file);
+    if (fseek(file, location, SEEK_SET) != 0) {
+        perror(FILE_IO_ERROR);
+    }
+    if (fwrite(&len, sizeof(int), 1, file) != 1) {
+        perror(FILE_IO_ERROR);
+    }
+    if (fputs(output.str().c_str(), file) == EOF) {
+        perror(FILE_IO_ERROR);
+    }
 }
 
 void Filereader::create(std::string name) {
@@ -162,6 +161,7 @@ void Filereader::open(std::string name) {
         file = fopen(name.c_str(), "w+");
         if (file == NULL) {
             std::cerr << "Error: unable to open file:\n    " << name << "\n";
+            perror("Error message: ");
             return;
         }
         header.write_header(file);
