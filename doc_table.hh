@@ -10,18 +10,16 @@
 // For doing low level file IO things
 class DocTable {
 private:    
-public: // TODO: make private
     std::vector<jsoninfo> documents;
-private:
     long end = DOC_TABLE_START;
-
-private:    
+    
 public: // TODO: make private
     // Check if it exists in the documents vecor
     // Document names must be unique
     jsoninfo *find_by_name(std::string name, FILE *file);
 
 public:
+    std::vector<jsoninfo> get_documents();
     // Return 0 on success, -1 if out of room
     int add(jsoninfo &doc, int header_len, FILE *file);
     void write(jsoninfo &doc, FILE *file);
@@ -34,7 +32,6 @@ public:
     nlohmann::json *get_json(std::string name, FILE *file);
     int get_file_end();
     void shift(int start, int new_start, FILE *file);
-    void list(FILE *file);
 };
 
 #endif

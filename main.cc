@@ -88,16 +88,21 @@ int main(int argc, char *argv[]) {
         }
         else if (get_first_word(line) == "LIST") {
             std::string remaining = get_tail(line);
-            if (get_tail(remaining) != "") {
-                std::cerr << "Extra arguments to LIST command. "
-                          << "Usage:\n    LIST\n";
+            std::vector<std::string> properties;
+            while (remaining != "") {
+                std::string next = get_first_word(remaining);
+                if (next != "") {
+                    properties.push_back(next);
+                }
+                remaining = get_tail(remaining);
             }
-            else {
-                f.list();
-            }
+            f.list(properties);
         }
-        else {
+        else if (get_first_word(line) != "") {
             std::cerr << "Command not recognized.\n";
+        }
+        else if (line.size() > 0 && line[0] == ' ') {
+            std::cerr << "Illegal starting space.\n";
         }
         std::cout << ">>> ";
     }

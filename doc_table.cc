@@ -13,6 +13,9 @@ jsoninfo *DocTable::find_by_name(std::string name, FILE *file) {
     return nullptr;
 }
 
+std::vector<jsoninfo> DocTable::get_documents() {
+    return documents;
+}
 
 int DocTable::add(jsoninfo &doc, int header_len, FILE *file) {
     // Check for room
@@ -200,12 +203,5 @@ void DocTable::shift(int start, int new_start, FILE *file) {
             change.doc_start += new_start - start;
             modify(documents[i].name, change, file);
         }
-    }
-}
-
-
-void DocTable::list(FILE *file) {
-    for(unsigned int i = 0; i < documents.size(); ++i) {
-        std::cout << documents[i].name << "\n";
     }
 }

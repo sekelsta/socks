@@ -49,7 +49,7 @@ public:
 
     void open(std::string name);
 
-    void list();
+    void list(std::vector<std::string> properties);
 };
 
 #endif

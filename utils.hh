@@ -3,6 +3,7 @@
 
 #include <string>
 
+// Returns the part of a string up to the first space.
 inline std::string get_first_word(std::string s) {
     size_t n = s.find(" ");
     if (n == std::string::npos) {
@@ -11,6 +12,7 @@ inline std::string get_first_word(std::string s) {
     return s.substr(0, n);
 }
 
+// Returns the part of a string after (not including) the first space.
 inline std::string get_tail(std::string s) {
     // TODO: deal with unexpected whitespace
     size_t n = s.find(" ");

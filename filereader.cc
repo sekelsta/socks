@@ -22,7 +22,7 @@ void Filereader::extend(jsoninfo *js, int size_needed) {
     while (new_size <= size_needed) {
         new_size *= 2;
     }
-    if (js->name != table.documents.back().name) {
+    if (js->name != table.get_documents().back().name) {
         int start = js->doc_start + js->allocated_size;
         int new_start = js->doc_start + new_size;
         file_shift(start, new_start, file);
@@ -172,6 +172,17 @@ void Filereader::open(std::string name) {
     table.read(header.num_docs, file);
 }
 
-void Filereader::list() {
-    table.list(file);
+void Filereader::list(std::vector<std::string> properties) {
+    std::vector<jsoninfo> docs = table.get_documents();
+    for (unsigned int i = 0; i < docs.size(); ++i) {
+        assert(docs[i].j != nullptr);
+        json *js = docs[i].j;
+        std::cout << docs[i].name << ": \n";
+        for (unsigned int j = 0; j < properties.size(); ++j) {
+            if (js->count(properties[j])) {
+                std::cout << "    " << properties[j] << ": " 
+                          << (*js)[properties[j]] << "\n";
+            }
+        }
+    }
 }
