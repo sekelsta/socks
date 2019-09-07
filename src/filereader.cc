@@ -154,6 +154,10 @@ void Filereader::del(std::string name) {
 }
 
 void Filereader::open(std::string name) {
+    if (is_open()) {
+        fclose(file);
+        file = nullptr;
+    }
     // mode r+, read and write
     file = fopen(name.c_str(), "r+");
     if (file == NULL) {

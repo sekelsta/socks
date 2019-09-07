@@ -40,7 +40,7 @@ void DocTable::write(jsoninfo &doc, FILE *file) {
         perror(FILE_IO_ERROR);
     }
     // Write document's location
-    if (fwrite(&(doc.doc_start), sizeof(int), 1, file) != 1) {
+    if (fwrite(&(doc.doc_start), sizeof(int64_t), 1, file) != 1) {
         perror(FILE_IO_ERROR);
     }
     // Write name length
@@ -136,8 +136,8 @@ void DocTable::read(int num_docs, FILE *file) {
             perror(FILE_IO_ERROR);
         }
         // Read int for file position
-        int pos;
-        if (fread(&pos, sizeof(int32_t), 1, file) != 1) {
+        long int pos;
+        if (fread(&pos, sizeof(int64_t), 1, file) != 1) {
             perror(FILE_IO_ERROR);
         }
         // Read char for name length

@@ -9,7 +9,7 @@
 
 
 class Filereader {
-    FILE *file = NULL;
+    FILE *file = nullptr;
     Fileheader header; 
     DocTable table;
 
@@ -26,7 +26,7 @@ class Filereader {
 
 public:
     inline bool is_open() {
-        return file != NULL;
+        return file != nullptr;
     }
 
     void write(jsoninfo *js);
