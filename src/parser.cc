@@ -12,7 +12,7 @@ bool Parser::do_command(std::string line) {
     if (to_upper(line) == "QUIT") {
         return false;
     }
-    else if (get_first_word(line) == "OPEN") {
+    else if (to_upper(get_first_word(line)) == "OPEN") {
         if (is_valid_filename(get_tail(line))) {
             f.open(get_tail(line));
         }
@@ -27,7 +27,7 @@ bool Parser::do_command(std::string line) {
             << "    OPEN filename\n";
     }
     // Create a document
-    else if (get_first_word(line) == "CREATE") {
+    else if (to_upper(get_first_word(line)) == "CREATE") {
         if (get_tail(line) != "" 
                 && get_tail(line).find(" ") == std::string::npos) {
             f.create(get_tail(line));
@@ -38,7 +38,7 @@ bool Parser::do_command(std::string line) {
         }
     }
     // Delete a document
-    else if (get_first_word(line) == "DELETE") {
+    else if (to_upper(get_first_word(line)) == "DELETE") {
         if (get_tail(line) != "" 
                 && get_tail(line).find(" ") == std::string::npos) {
             f.del(get_tail(line));
@@ -49,7 +49,7 @@ bool Parser::do_command(std::string line) {
         }
     }
     // Edit a document
-    else if (get_first_word(line) == "EDIT") {
+    else if (to_upper(get_first_word(line)) == "EDIT") {
         std::string remaining = get_tail(line);
         std::string name = get_first_word(remaining);
         remaining = get_tail(remaining);
@@ -64,7 +64,7 @@ bool Parser::do_command(std::string line) {
         }
     }
     // View a property
-    else if (get_first_word(line) == "VIEW") {
+    else if (to_upper(get_first_word(line)) == "VIEW") {
         std::string remaining = get_tail(line);
         std::string name = get_first_word(remaining);
         remaining = get_tail(remaining);
@@ -80,7 +80,7 @@ bool Parser::do_command(std::string line) {
             f.view(name, property);
         }
     }
-    else if (get_first_word(line) == "LIST") {
+    else if (to_upper(get_first_word(line)) == "LIST") {
         std::string remaining = get_tail(line);
         std::vector<std::string> properties;
         while (remaining != "") {
