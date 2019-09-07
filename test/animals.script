@@ -1,0 +1,49 @@
+OPEN animals
+CREATE cat
+CREATE dog
+CREATE goldfish
+CREATE barnicle
+CREATE goose
+CREATE rhinoceros
+CREATE elephant
+CREATE tiger
+CREATE lion
+CREATE chicken
+CREATE frog
+CREATE toad
+CREATE trout
+CREATE ladybug
+CREATE earthworm
+CREATE octopus
+CREATE leopard
+CREATE paraceratherium
+CREATE giraffe
+CREATE whale_shark
+CREATE wolf
+CREATE whale
+CREATE wildebeest
+CREATE crocodile
+CREATE turtle
+CREATE tortoise
+CREATE cheetah
+CREATE caracal
+CREATE African_wild_dog
+CREATE salmon
+CREATE pony
+CREATE jaguar
+CREATE horse
+EDIT horse height "4.3 hands"
+EDIT horse color "bay"
+EDIT horse name "Black Stallion"
+EDIT tiger stripes 276
+EDIT tiger name "Autumn"
+EDIT tiger wieght 300
+EDIT tiger height 128
+CREATE bee
+EDIT bee long_trait "a very very long trait indeed"
+EDIT bee more_long "According to all known laws of aviation, there is no way a bee should be able to fly. Its wings are too small to get its fat little body off the ground. The bee, of course, flies anyway because bees don't care what humans think is impossible. Yellow, black. Yellow, black. Yellow, black. Yellow, black. Ooh, black and yellow! Let's shake it up a little."
+EDIT tiger another_long "According to all known laws of aviation, there is no way a bee should be able to fly. Its wings are too small to get its fat little body off the ground. The bee, of course, flies anyway because bees don't care what humans think is impossible. Yellow, black. Yellow, black. Yellow, black. Yellow, black. Ooh, black and yellow! Let's shake it up a little."
+VIEW horse
+VIEW tiger
+VIEW bee
+QUIT
