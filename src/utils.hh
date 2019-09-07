@@ -1,6 +1,7 @@
 #ifndef UTILS_HH
 #define UTILS_HH
 
+#include <cctype>
 #include <string>
 
 // Returns the part of a string up to the first space.
@@ -29,6 +30,14 @@ inline bool is_valid_filename(std::string name) {
         }
     }
     return true;
+}
+
+inline std::string to_upper(std::string s) {
+    std::string out = "";
+    for (unsigned int i = 0; i < s.length(); ++i) {
+        out += (char)toupper(s[i]);
+    }
+    return out;
 }
 
 

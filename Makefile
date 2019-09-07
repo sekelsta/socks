@@ -3,34 +3,39 @@ CXX = g++
 # For going fast use -O3
 CXXFLAGS = -std=c++14 -Wall -D_GLIBCXX_DEBUG -D_LIBCXX_DEBUG_PEDANTIC -Og -g
 
-# Keep track of dependencies
-utils.hh.d = utils.hh
-filereader.hh.d = filereader.hh $(fileheader.hh.d) $(jsoninfo.hh.d)
-fileheader.hh.d = fileheader.hh
-jsoninfo.hh.d = jsoninfo.hh json.hpp
-doc_table.hh.d = doc_table.hh jsoninfo.hh $(fileheader.hh.d)
-file_utils.hh.d = file_utils.hh
+# what folders
+SRCDIR = src/
+OBJDIR = obj/
+BINDIR = ./
 
-all: main
+# File names
+SOURCEFILES := $(notdir $(wildcard $(SRCDIR)*.cc))
+SOURCES = $(addprefix $(SRCDIR), $(SOURCEFILES))
+OBJECTS = $(addprefix $(OBJDIR), $(SOURCEFILES:.cc=.o))
+EXEC = socks
 
-main: main.cc utils.hh $(filereader.hh.d) filereader.cc $(jsoninfo.hh.d) $(fileheader.hh.d) fileheader.cc $(doc_table.hh.d) doc_table.cc
-	$(CXX) $(CXXFLAGS) main.cc filereader.cc fileheader.cc doc_table.cc -o $@
+DEPDIR := .d
+$(shell mkdir -p $(DEPDIR) >/dev/null)
+DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.Td
 
-main.o: main.cc $(utils.hh.d) $(filereader.hh.d) json.hpp
-	$(CC) $(CXXFLAGS) $^ -c $(LDFLAGS)
+COMPILE.cc = $(CXX) $(DEPFLAGS) $(CXXFLAGS) $(INCLUDE_FLAGS) -c
+POSTCOMPILE = @mv -f $(DEPDIR)/$*.Td $(DEPDIR)/$*.d && touch $@
 
-fileheader.o: fileheader.cc $(fileheader.hh.d)
-	$(CC) $(CXXFLAGS) $^ -c $(LDFLAGS)
+all: $(EXEC)
 
-filereader.o: filereader.cc $(filereader.hh.d) $(file_utils.hh.d)
-	$(CC) $(CXXFLAGS) $^ -c $(LDFLAGS)
+$(EXEC): $(OBJECTS)
+	$(CXX) $(OBJECTS) $(LINKER_FLAGS) -o $(BINDIR)$@
 
-test_header: test_header.cc $(fileheader.hh.d) $(doc_table.hh.d) fileheader.cc doc_table.cc
-	$(CXX) $(CXXFLAGS) test_header.cc fileheader.cc doc_table.cc -o $@
+
+$(OBJDIR)%.o: $(SRCDIR)%.cc
+$(OBJDIR)%.o: $(SRCDIR)%.cc $(DEPDIR)/%.d
+	$(COMPILE.cc) $(OUTPUT_OPTION) $<
+	$(POSTCOMPILE)
 
 # To remove generated files
+# This purposely does not remove the binary output
 clean: 
-	rm -f *.o *.gch main
+	rm -f $(OBJDIR)*.o $(SRCDIR)*.gch
 
 $(DEPDIR)/%.d: ;
 .PRECIOUS: $(DEPDIR)/%.d
