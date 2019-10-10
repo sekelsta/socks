@@ -1,8 +1,13 @@
 #include "fileheader.hh"
 #include "file_utils.hh"
+#include <iostream>
+//#define DEBUG_HEADER
 
 void Fileheader::set_header_len(int num, FILE *file) {
     header_len = num;
+#ifdef DEBUG_HEADER
+    std::cout << "Setting header length to " << num << "\n";
+#endif
     // First int is header len, next int is num_docs
     if (fseek(file, 0, SEEK_SET) != 0) {
         perror(FILE_IO_ERROR);
@@ -14,6 +19,9 @@ void Fileheader::set_header_len(int num, FILE *file) {
 
 void Fileheader::set_num_docs(int num, FILE *file) {
     num_docs = num;
+#ifdef DEBUG_HEADER
+    std::cout << "Setting the number of documents to " << num << "\n";
+#endif
     // First int is header len, next int is num_docs
     if (fseek(file, sizeof(int), SEEK_SET) != 0) {
         perror(FILE_IO_ERROR);
@@ -36,6 +44,9 @@ void Fileheader::read_header(FILE *file) {
     if (fread(&num_docs, sizeof(int), 1, file) != 1) {
         perror(FILE_IO_ERROR);
     }
+#ifdef DEBUG_HEADER
+    std::cout << "Reading header: length " << header_len << ", " << num_docs << "documents\n";
+#endif
 }
 
 // Write current values to the file

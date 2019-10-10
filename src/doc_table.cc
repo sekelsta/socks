@@ -3,7 +3,17 @@
 
 using json = nlohmann::json;
 
-jsoninfo *DocTable::find_by_name(std::string name, FILE *file) {
+void DocTable::seek_to_header_start(jsoninfo &doc) {
+    long int loc = DOC_TABLE_START + doc.index * get_entry_size();
+#ifdef DEBUG_FILE_IO
+    std::cout << "Seeking to " << loc << " for document " << doc.index << ".\n";
+#endif
+    if (fseek(file, loc, SEEK_SET) != 0) {
+        perror(FILE_IO_ERROR);
+    }
+}
+
+jsoninfo *DocTable::find_by_name(std::string name) {
     for (std::vector<jsoninfo>::iterator it = documents.begin(); it != documents.end(); ++it) {
         if (it -> name == name) {
             // Convert iterator to pointer
@@ -13,48 +23,73 @@ jsoninfo *DocTable::find_by_name(std::string name, FILE *file) {
     return nullptr;
 }
 
+void DocTable::set_file(FILE *newfile) {
+    file = newfile;
+}
+
+int DocTable::get_entry_size() {
+    return 2 * sizeof(int64_t);
+}
+
 std::vector<jsoninfo> DocTable::get_documents() {
     return documents;
 }
 
-int DocTable::add(jsoninfo &doc, int header_len, FILE *file) {
+// Adds a document to the table, and modifies the one passed to have the 
+// correct values
+// Returns 0 if successful or -1 if there was not enough room
+int DocTable::add(jsoninfo &doc, Fileheader &header) {
+    // First try to replace a deleted file
+    for(unsigned int i = 0; i < documents.size(); ++i) {
+        if (documents[i].is_deleted()) {
+#ifdef DEBUG_FILE_IO
+            std::cout << "Replacing deleted document " << i << "\n";
+#endif
+            doc.index = documents[i].index;
+            doc.doc_start = documents[i].doc_start;
+            documents[i].name = doc.name;
+            documents[i].j = doc.j;
+
+            jsoninfo change = documents[i];
+            change.set_undeleted();
+            modify(i, change);
+            doc.allocated_size = documents[i].allocated_size;
+            return 0;
+        }
+    }
+    // Otherwise, add to the end
     // Check for room
-    int length = sizeof(int) + sizeof(char) + doc.name.length();
-    if (end + length > header_len) {
+    if (end + get_entry_size() > header.header_len) {
         return -1;
     }
     // Set new table end
-    doc.header_start = end;
-    write(doc, file);
-    end = ftell(file);
-    if (end == -1L) {
-        perror(FILE_IO_ERROR);
-    }
+    doc.index = documents.size();
+    doc.doc_start = get_file_end();
+    doc.allocated_size = BLOCK_SIZE;
+    write(doc);
     documents.push_back(doc);
+    header.set_num_docs(header.num_docs + 1, file);
     return 0;
 }
 
-void DocTable::write(jsoninfo &doc, FILE *file) {
+void DocTable::write(jsoninfo &doc) {
     // Seek
-    if (fseek(file, doc.header_start, SEEK_SET) != 0) {
-        perror(FILE_IO_ERROR);
-    }
+    seek_to_header_start(doc);
+#ifdef DEBUG_FILE_IO
+    std::cout << "Writing doc_start as " << doc.doc_start << "\n";
+#endif
     // Write document's location
     if (fwrite(&(doc.doc_start), sizeof(int64_t), 1, file) != 1) {
         perror(FILE_IO_ERROR);
     }
-    // Write name length
-    if (fputc((char)doc.name.length(), file) == EOF) {
-        perror(FILE_IO_ERROR);
-    }
-    // Write name
-    if (fputs(doc.name.c_str(), file) == EOF) {
+    // Write allocated size
+    if (fwrite(&(doc.allocated_size), sizeof(int64_t), 1, file) != 1) {
         perror(FILE_IO_ERROR);
     }
 }
 
-void DocTable::remove(std::string name, FILE *file) {
-    jsoninfo *doc = find_by_name(name, file);
+void DocTable::remove(std::string name) {
+    jsoninfo *doc = find_by_name(name);
     if (doc == nullptr) {
         std::cerr << "Document " << name << " not found.";
     }
@@ -63,48 +98,44 @@ void DocTable::remove(std::string name, FILE *file) {
         perror(FILE_IO_ERROR);
     }
 
-    // TODO
-    throw "TODO: remove documents";
+    doc->name = "";
+    free(doc->j);
+    doc->j = nullptr;
+    jsoninfo newdoc = *doc;
+    newdoc.set_deleted();
+    modify(doc->index, newdoc);
 }
 
-void DocTable::modify(std::string name, jsoninfo doc, FILE *file) {
-    jsoninfo *current = find_by_name(name, file);
-    if (current == nullptr) {
-        std::cerr << "Document " << name << " not found.";
-    }
-    // Seek
-    if (fseek(file, DOC_TABLE_START, SEEK_SET) != 0) {
-        perror(FILE_IO_ERROR);
-    }
-    
-    // TODO
-    if (name.length() != doc.name.length()) {
-        throw "TODO: document name length change";
-    }
-    else {
-        doc.header_start = current->header_start;
-        *current = doc;
-        write(doc, file);
-    }
+void DocTable::modify(std::string name, jsoninfo doc) {
+    jsoninfo *current = find_by_name(name);
+    modify(current->index, doc);
+}
+void DocTable::modify(int index, jsoninfo doc) {
+    doc.index = index;
+    documents[index] = doc;
+    write(doc);
 }
 
-int DocTable::get_doc_start(std::string name, FILE *file) {
-    int start = find_by_name(name, file) -> doc_start;
-    if (start == INVALID_LOCATION) {
-        std::cerr << "Start of document " << name << " not set.\n";
-    }
-    return start;
+int DocTable::get_doc_start(int index) {
+    return documents[index].doc_start;
 }
 
-bool DocTable::is_name_used(std::string name, FILE *file) {
-    return find_by_name(name, file) != nullptr;
+int DocTable::get_doc_start(std::string name) {
+    return get_doc_start(find_by_name(name) -> index);
 }
 
-void DocTable::read_json(jsoninfo *js, FILE *file) {
+bool DocTable::is_name_used(std::string name) {
+    return find_by_name(name) != nullptr;
+}
+
+void DocTable::read_json(jsoninfo *js) {
     if (js -> j != nullptr) {
         std::cout << "Warning: Destination json already exists.\n";
         delete js -> j;
     }
+#ifdef DEBUG_FILE_IO
+    std::cout << "Reading from " << js -> doc_start << "\n";
+#endif
     fseek(file, js -> doc_start, SEEK_SET);
     // Read the size of the json file
     int len;
@@ -123,70 +154,50 @@ void DocTable::read_json(jsoninfo *js, FILE *file) {
 }
 
 
-void DocTable::read(int num_docs, FILE *file) {
+void DocTable::read(int num_docs) {
     // Seek
     if (fseek(file, DOC_TABLE_START, SEEK_SET) != 0) {
         perror(FILE_IO_ERROR);
     }
     // Read
     for (int i = 0; i < num_docs; ++i) {
-        // Get position of header start
-        long int header_pos = ftell(file);
-        if (header_pos == -1) {
-            perror(FILE_IO_ERROR);
-        }
+#ifdef DEBUG_FILE_IO
+        std::cout << "Reading header from " << ftell(file) << "\n";
+#endif
         // Read int for file position
         long int pos;
         if (fread(&pos, sizeof(int64_t), 1, file) != 1) {
             perror(FILE_IO_ERROR);
         }
-        // Read char for name length
-        int name_len = fgetc(file);
-        if (name_len == EOF) {
+#ifdef DEBUG_FILE_IO
+        std::cout << "Position read from header: " << pos << "\n";
+#endif
+        // Read int for allocated size
+        long int size;
+        if (fread(&size, sizeof(int64_t), 1, file) != 1) {
             perror(FILE_IO_ERROR);
-        }
-        else if (name_len == 0) {
-            throw "Error: invalid format (names cannot be length 0)";
-        }
-        // Read name (malloc enough space for the ending '\0')
-        char *name = (char *)malloc(name_len + 1);
-        if (fgets(name, name_len + 1, file) == NULL) {
-            if (feof(file) != 0) {
-                std::cerr << UNEXPECTED_EOF_ERROR;
-            }
-            else {
-                perror(FILE_IO_ERROR);
-            }
         }
         if (feof(file) != 0) {
             std::cerr << UNEXPECTED_EOF_ERROR;
         }
-        documents.push_back({nullptr, pos, header_pos, 0, std::string(name)});
-        free(name);
+        documents.push_back({nullptr, pos, i, size, ""});
     }
     end = ftell(file);
     if (end == -1) {
             perror(FILE_IO_ERROR);
     }
-
-    // Set allocated size properly
-    for (int i = 0; i < num_docs - 1; ++i) {
-        documents[i].allocated_size = documents[i+1].doc_start - documents[i].doc_start;
-    }
-    // TODO: don't read until needed
+    assert(end == DOC_TABLE_START + (num_docs * get_entry_size()));
     // Read jsons
     for (int i = 0; i < num_docs; ++i) {
-        read_json(&(documents[i]), file);
-    }
-    if (num_docs > 0) {
-        int last_len = documents.back().j->dump().length();
-        // Round up to a multiple of BLOCK_SIZE
-        documents.back().allocated_size = BLOCK_SIZE * ceil(last_len/BLOCK_SIZE);
+        if (!documents[i].is_deleted()) {
+            read_json(&(documents[i]));
+            documents[i].name = (*(documents[i].j))["__name"];
+        }
     }
 }
 
-json *DocTable::get_json(std::string name, FILE *file) {
-    return find_by_name(name, file) -> j;
+json *DocTable::get_json(std::string name) {
+    return find_by_name(name) -> j;
 }
 
 int DocTable::get_file_end() {
@@ -196,12 +207,27 @@ int DocTable::get_file_end() {
     return documents.back().doc_start + documents.back().allocated_size;
 }
 
-void DocTable::shift(int start, int new_start, FILE *file) {
+void DocTable::shift(int start, int new_start) {
     for(unsigned int i = 0; i < documents.size(); ++i) {
         if (documents[i].doc_start >= start) {
             jsoninfo change = documents[i];
             change.doc_start += new_start - start;
-            modify(documents[i].name, change, file);
+            modify(i, change);
         }
     }
+}
+
+void DocTable::free_jsons() {
+    for(unsigned int i = 0; i < documents.size(); ++i) {
+        if (documents[i].j != nullptr) {
+            delete documents[i].j;
+            documents[i].j = nullptr;
+        }
+    }
+}
+
+void DocTable::close() {
+    free_jsons();
+    documents.clear();
+    file = nullptr;
 }

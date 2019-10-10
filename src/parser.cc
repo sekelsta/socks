@@ -7,7 +7,7 @@
 
 using json = nlohmann::json;
 
-bool Parser::do_command(std::string line) {
+bool Parser::do_command(std::string line, bool prompt) {
     // Quit
     if (to_upper(line) == "QUIT") {
         return false;
@@ -20,6 +20,17 @@ bool Parser::do_command(std::string line) {
             std::cerr << "Error: Must be a valid file name:\n    \""
                       << get_tail(line) << "\"\n";
         }
+    }
+    else if (to_upper(get_first_word(line)) == "HELP") {
+        std::cout << "Supported commands are:\n"
+                  << "QUIT\n"
+                  << "OPEN filename\n"
+                  << "CREATE name\n"
+                  << "DELETE name\n"
+                  << "EDIT name property value\n"
+                  << "VIEW name [property]\n"
+                  << "LIST [property] [next_property] ...\n"
+                  << "HELP\n\n";
     }
     // Need to have an open document before doing anything else
     else if (!f.is_open()) {
@@ -96,8 +107,11 @@ bool Parser::do_command(std::string line) {
         std::cerr << "Command not recognized.\n";
     }
     else if (line.size() > 0 && line[0] == ' ') {
-        std::cerr << "Illegal starting space.\n";
+        do_command(line.substr(1, line.length() - 1), prompt);
+        prompt = false;
     }
-    std::cout << ">>> ";
+    if (prompt) {
+        std::cout << ">>> ";
+    }
     return true;
 }

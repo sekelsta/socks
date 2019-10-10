@@ -21,6 +21,4 @@ struct Fileheader {
     // Write current values to the file
     void write_header(FILE *file);
 };
-// TODO: handle being given a file of the wrong type 
-// (add an identifier to the header and use an extension)
 #endif
